@@ -25,5 +25,35 @@ Initial repository setup — config files, agent rules, documentation structure.
 - `docs/AI_LOG.md` — this file
 
 ### Follow-ups
-- Move `cm0102-cloud-project-plan.md` into the repo
-- Begin Phase 1: Docker game image
+- ~~Move `cm0102-cloud-project-plan.md` into the repo~~ Done
+- ~~Begin Phase 1: Docker game image~~ Done (see below)
+
+---
+
+## 2026-02-21 — Phase 1: Docker Game Image
+
+### Goal
+Create the Docker image files for running CM 01/02 headlessly with noVNC access.
+
+### Plan
+- Create `docker/game/Dockerfile` (Ubuntu 24.04 + Wine + Xvfb + x11vnc + noVNC)
+- Create `docker/game/entrypoint.sh` (starts display, VNC, noVNC, launches game)
+- Create `docker/game/.dockerignore`
+- Create `docker/game/README.md` (manual Wine prefix build instructions)
+
+### Decisions
+- Added `dpkg --add-architecture i386` to Dockerfile — required for Wine on 64-bit Ubuntu
+- Used `--no-install-recommends` to keep image smaller
+- Used `exec wine ...` in entrypoint so SIGTERM propagates for clean Pod shutdown
+- Documented the manual Wine prefix build in a README rather than trying to automate the interactive installer
+
+### Files changed
+- `docker/game/Dockerfile` — new
+- `docker/game/entrypoint.sh` — new
+- `docker/game/.dockerignore` — new
+- `docker/game/README.md` — new
+- `docs/AI_LOG.md` — updated
+
+### Follow-ups
+- Manually build the Wine prefix on the Hetzner server (Phase 5 prerequisite)
+- Phase 2: Kubernetes manifests
