@@ -129,4 +129,28 @@ Build the full Express web app: auth, K8s orchestration, dashboard, game views, 
 - `docs/AI_LOG.md` — updated
 
 ### Follow-ups
-- Phase 4: CI/CD (GitHub Actions)
+- ~~Phase 4: CI/CD (GitHub Actions)~~ Done (see below)
+
+---
+
+## 2026-02-21 — Phase 4: CI/CD
+
+### Goal
+GitHub Actions workflow to build and push both Docker images on merge to main.
+
+### Plan
+- Create `.github/workflows/build.yaml` with two parallel jobs (game image + web app)
+
+### Decisions
+- Added `docker/setup-buildx-action` for BuildKit support
+- Added GHA cache (`cache-from`/`cache-to` type=gha) for faster builds, especially for the large game image
+- Used `${{ secrets.DOCKER_USERNAME }}` in tags instead of hardcoded username
+- Two independent jobs run in parallel
+
+### Files changed
+- `.github/workflows/build.yaml` — new
+- `docs/AI_LOG.md` — updated
+
+### Follow-ups
+- Set `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets in the GitHub repo
+- Phase 5: Server setup and deployment (manual steps)
