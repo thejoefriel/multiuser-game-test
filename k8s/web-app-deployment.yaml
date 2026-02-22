@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cm-web-app
+  namespace: cm-games
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cm-web-app
+  template:
+    metadata:
+      labels:
+        app: cm-web-app
+    spec:
+      serviceAccountName: cm-orchestrator
+      containers:
+        - name: web-app
+          image: YOUR_DOCKERHUB/cm-web-app:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_PATH
+              value: "/data/cm-app.db"
+            - name: GAME_IMAGE
+              value: "YOUR_DOCKERHUB/cm0102-server:latest"
+            - name: GAME_DOMAIN
+              value: "game.yourdomain.com"
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+      volumes:
+        - name: app-data
+          hostPath:
+            path: /data/cm-app
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cm-web-app
+  namespace: cm-games
+spec:
+  selector:
+    app: cm-web-app
+  ports:
+    - port: 3000
+      targetPort: 3000
