@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cm-idle-cleanup
+  namespace: cm-games
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cm-orchestrator
+          containers:
+            - name: cleanup
+              image: YOUR_DOCKERHUB/cm-web-app:latest
+              command: ["node", "src/cleanup.js"]
+              env:
+                - name: DATABASE_PATH
+                  value: "/data/cm-app.db"
+                - name: IDLE_TIMEOUT_MINUTES
+                  value: "30"
+              volumeMounts:
+                - name: app-data
+                  mountPath: /data
+          volumes:
+            - name: app-data
+              hostPath:
+                path: /data/cm-app
+                type: DirectoryOrCreate
+          restartPolicy: OnFailure

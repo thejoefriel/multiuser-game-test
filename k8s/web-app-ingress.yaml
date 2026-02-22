@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cm-web-app-ingress
+  namespace: cm-games
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - game.yourdomain.com
+      secretName: cm-game-tls
+  rules:
+    - host: game.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cm-web-app
+                port:
+                  number: 3000

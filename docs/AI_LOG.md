@@ -56,4 +56,31 @@ Create the Docker image files for running CM 01/02 headlessly with noVNC access.
 
 ### Follow-ups
 - Manually build the Wine prefix on the Hetzner server (Phase 5 prerequisite)
-- Phase 2: Kubernetes manifests
+- ~~Phase 2: Kubernetes manifests~~ Done (see below)
+
+---
+
+## 2026-02-21 — Phase 2: Kubernetes Manifests
+
+### Goal
+Create all Kubernetes manifests for the cm-games namespace.
+
+### Plan
+- Namespace, RBAC, web app Deployment + Service, Ingress, idle cleanup CronJob
+
+### Decisions
+- Followed the project plan exactly for all manifests
+- Left `YOUR_DOCKERHUB` and `game.yourdomain.com` as placeholders — to be replaced during deployment
+- All resources in `cm-games` namespace per AGENTS.md conventions
+
+### Files changed
+- `k8s/namespace.yaml` — new
+- `k8s/rbac.yaml` — new (ServiceAccount + Role + RoleBinding)
+- `k8s/web-app-deployment.yaml` — new (Deployment + Service)
+- `k8s/web-app-ingress.yaml` — new (Traefik Ingress with TLS)
+- `k8s/idle-cleanup-cronjob.yaml` — new (CronJob every 10 min)
+- `docs/AI_LOG.md` — updated
+
+### Follow-ups
+- Replace placeholder values with real Docker Hub username and domain
+- Phase 3: Web application
