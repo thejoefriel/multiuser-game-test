@@ -83,4 +83,50 @@ Create all Kubernetes manifests for the cm-games namespace.
 
 ### Follow-ups
 - Replace placeholder values with real Docker Hub username and domain
-- Phase 3: Web application
+- ~~Phase 3: Web application~~ Done (see below)
+
+---
+
+## 2026-02-21 — Phase 3: Web Application
+
+### Goal
+Build the full Express web app: auth, K8s orchestration, dashboard, game views, idle cleanup.
+
+### Plan
+- Scaffold `web-app/` with package.json and Dockerfile
+- Create database module with SQLite schema (users + game_sessions)
+- Create auth module (bcrypt hashing, session middleware)
+- Create K8s orchestration module (start/stop/status game Pods)
+- Create route handlers (auth, game, dashboard)
+- Create idle cleanup script for CronJob
+- Create EJS views (login, register, dashboard, play)
+
+### Decisions
+- Used `better-sqlite3` over `sqlite3` — synchronous API is simpler for this use case
+- Used prepared statements for all DB queries
+- K8s resource names use first 8 chars of userId to stay within K8s naming limits
+- `ignoreNotFound` helper in stopGameForUser to handle already-deleted resources gracefully
+- Play page auto-refreshes every 5s while Pod is pending
+- Heartbeat runs every 60s from the play page to keep session alive
+- Dark theme UI matching the CM 01/02 aesthetic
+- Web app Dockerfile uses `node:20-slim` and `npm ci --production`
+
+### Files changed
+- `web-app/package.json` — new
+- `docker/web-app/Dockerfile` — new
+- `web-app/src/db.js` — new
+- `web-app/src/auth.js` — new
+- `web-app/src/k8s.js` — new
+- `web-app/src/cleanup.js` — new
+- `web-app/src/index.js` — new
+- `web-app/src/routes/auth.js` — new
+- `web-app/src/routes/game.js` — new
+- `web-app/src/routes/dashboard.js` — new
+- `web-app/views/login.ejs` — new
+- `web-app/views/register.ejs` — new
+- `web-app/views/dashboard.ejs` — new
+- `web-app/views/play.ejs` — new
+- `docs/AI_LOG.md` — updated
+
+### Follow-ups
+- Phase 4: CI/CD (GitHub Actions)

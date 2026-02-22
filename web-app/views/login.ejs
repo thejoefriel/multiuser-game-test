@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CM 01/02</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #1a1a2e; color: #eee; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: #16213e; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; }
+    h1 { margin-bottom: 1.5rem; text-align: center; }
+    label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #333; border-radius: 4px; background: #0f3460; color: #eee; }
+    button { width: 100%; padding: 0.75rem; background: #e94560; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    button:hover { background: #c73e54; }
+    .error { background: #e94560; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; text-align: center; }
+    .link { text-align: center; margin-top: 1rem; }
+    .link a { color: #e94560; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Championship Manager 01/02</h1>
+    <% if (error) { %><div class="error"><%= error %></div><% } %>
+    <form method="POST" action="/login">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+      <button type="submit">Log In</button>
+    </form>
+    <div class="link">
+      <p>Don't have an account? <a href="/register">Register</a></p>
+    </div>
+  </div>
+</body>
+</html>

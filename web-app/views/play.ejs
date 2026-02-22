@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playing — CM 01/02</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; overflow: hidden; }
+    .toolbar { position: fixed; top: 0; left: 0; right: 0; background: rgba(22, 33, 62, 0.95); padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+    .toolbar a, .toolbar button { color: #eee; text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.85rem; background: none; border: 1px solid #666; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; }
+    .toolbar a:hover, .toolbar button:hover { background: rgba(255,255,255,0.1); }
+    iframe { position: fixed; top: 40px; left: 0; width: 100%; height: calc(100vh - 40px); border: none; }
+    .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #eee; font-family: system-ui, sans-serif; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <a href="/dashboard">Back to Dashboard</a>
+    <form method="POST" action="/game/stop" style="margin: 0;">
+      <button type="submit">Stop Game</button>
+    </form>
+  </div>
+
+  <% if (status.pending) { %>
+    <div class="loading">
+      <h2>Starting your game...</h2>
+      <p>This may take a moment. The page will refresh automatically.</p>
+    </div>
+    <script>setTimeout(() => location.reload(), 5000);</script>
+  <% } else { %>
+    <iframe src="<%= status.url %>" allow="fullscreen"></iframe>
+  <% } %>
+
+  <script>
+    // Heartbeat to keep session alive
+    setInterval(() => fetch('/api/heartbeat', { method: 'POST' }), 60000);
+  </script>
+</body>
+</html>

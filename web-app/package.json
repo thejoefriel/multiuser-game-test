@@ -1,0 +1,20 @@
+{
+  "name": "cm0102-web-app",
+  "version": "1.0.0",
+  "description": "Web app for CM 01/02 cloud gaming platform",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "ejs": "^3.1.10",
+    "better-sqlite3": "^11.3.0",
+    "bcrypt": "^5.1.1",
+    "uuid": "^10.0.0",
+    "@kubernetes/client-node": "^1.0.0",
+    "crypto": "^1.0.1"
+  }
+}
