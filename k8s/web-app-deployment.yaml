@@ -16,16 +16,16 @@ spec:
       serviceAccountName: cm-orchestrator
       containers:
         - name: web-app
-          image: YOUR_DOCKERHUB/cm-web-app:latest
+          image: thejoefriel/cm-web-app:latest
           ports:
             - containerPort: 3000
           env:
             - name: DATABASE_PATH
               value: "/data/cm-app.db"
             - name: GAME_IMAGE
-              value: "YOUR_DOCKERHUB/cm0102-server:latest"
+              value: "thejoefriel/cm0102-server:latest"
             - name: GAME_DOMAIN
-              value: "game.yourdomain.com"
+              value: "cm.jofriel.fyi"
           volumeMounts:
             - name: app-data
               mountPath: /data

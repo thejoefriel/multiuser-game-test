@@ -12,7 +12,7 @@ spec:
           serviceAccountName: cm-orchestrator
           containers:
             - name: cleanup
-              image: YOUR_DOCKERHUB/cm-web-app:latest
+              image: thejoefriel/cm-web-app:latest
               command: ["node", "src/cleanup.js"]
               env:
                 - name: DATABASE_PATH

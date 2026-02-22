@@ -153,4 +153,25 @@ GitHub Actions workflow to build and push both Docker images on merge to main.
 
 ### Follow-ups
 - Set `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets in the GitHub repo
-- Phase 5: Server setup and deployment (manual steps)
+- ~~Phase 5: Server setup and deployment (manual steps)~~ Config done (see below)
+
+---
+
+## 2026-02-22 — Phase 5: Server Deployment Config
+
+### Goal
+Update K8s manifests with real values and fix ingress to match existing cluster pattern.
+
+### Decisions
+- Matched existing ingress pattern: `ingressClassName: traefik`, cluster-issuer `letsencrypt` (not `letsencrypt-prod`), no router.entrypoints annotation
+- Domain: `cm.jofriel.fyi`
+- Docker Hub: `thejoefriel`
+- Deploying onto existing CX32 server alongside habits-builder and voice-agent apps
+
+### Files changed
+- `k8s/web-app-ingress.yaml` — fixed to match cluster pattern, set real domain
+- `k8s/web-app-deployment.yaml` — replaced placeholder image names and domain
+- `k8s/idle-cleanup-cronjob.yaml` — replaced placeholder image name
+
+### Follow-ups
+- Server-side: add swap, clone repo, build Wine prefix, build Docker images, deploy
