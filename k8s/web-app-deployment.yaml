@@ -13,6 +13,10 @@ spec:
       labels:
         app: cm-web-app
     spec:
+      tolerations:
+        - key: "node.kubernetes.io/disk-pressure"
+          operator: "Exists"
+          effect: "NoSchedule"
       serviceAccountName: cm-orchestrator
       containers:
         - name: web-app

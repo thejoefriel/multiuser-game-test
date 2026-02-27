@@ -8,13 +8,14 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^1.0.0",
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.3.0",
+    "crypto": "^1.0.1",
+    "ejs": "^3.1.10",
     "express": "^4.21.0",
     "express-session": "^1.18.0",
-    "ejs": "^3.1.10",
-    "better-sqlite3": "^11.3.0",
-    "bcrypt": "^5.1.1",
     "uuid": "^10.0.0",
-    "@kubernetes/client-node": "^1.0.0",
-    "crypto": "^1.0.1"
+    "ws": "^8.19.0"
   }
 }

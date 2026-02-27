@@ -8,9 +8,12 @@ RUN dpkg --add-architecture i386 && \
     wine32 \
     wine64 \
     xvfb \
-    x11vnc \
+    tigervnc-standalone-server \
     novnc \
     websockify \
+    pulseaudio \
+    xdotool \
+    imagemagick \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pre-built template Wine prefix with CM 01/02 installed and patched.

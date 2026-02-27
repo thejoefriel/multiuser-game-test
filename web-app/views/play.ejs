@@ -23,13 +23,19 @@
   </div>
 
   <% if (status.pending) { %>
-    <div class="loading">
+    <div class="loading" id="loading">
       <h2>Starting your game...</h2>
       <p>This may take a moment. The page will refresh automatically.</p>
     </div>
     <script>setTimeout(() => location.reload(), 5000);</script>
   <% } else { %>
-    <iframe src="<%= status.url %>" allow="fullscreen"></iframe>
+    <div class="loading" id="loading">
+      <h2>Connecting to game...</h2>
+    </div>
+    <script>
+      // Use <%- %> (raw) to avoid HTML-encoding & as &amp; in the URL
+      setTimeout(function() { window.location.href = '<%- status.url %>'; }, 2000);
+    </script>
   <% } %>
 
   <script>

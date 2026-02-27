@@ -12,6 +12,7 @@ const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 const coreApi = kc.makeApiClient(k8s.CoreV1Api);
 const networkingApi = kc.makeApiClient(k8s.NetworkingV1Api);
+const customApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
 const stmts = {
   insertSession: db.prepare(
@@ -43,11 +44,49 @@ function ingressName(userId) {
   return `cm-game-ing-${userId.slice(0, 8)}`;
 }
 
+function middlewareName(userId) {
+  return `cm-game-mw-${userId.slice(0, 8)}`;
+}
+
+async function cleanupGameResources(userId) {
+  const pod = podName(userId);
+  const svc = serviceName(userId);
+  const ing = ingressName(userId);
+  const mw = middlewareName(userId);
+
+  const ignoreNotFound = (err) => {
+    if (err.statusCode === 404 || err.code === 404) return;
+    throw err;
+  };
+
+  await coreApi.deleteNamespacedPod({ namespace: NAMESPACE, name: pod }).catch(ignoreNotFound);
+  await coreApi.deleteNamespacedService({ namespace: NAMESPACE, name: svc }).catch(ignoreNotFound);
+  await networkingApi.deleteNamespacedIngress({ namespace: NAMESPACE, name: ing }).catch(ignoreNotFound);
+  await customApi.deleteNamespacedCustomObject({
+    group: 'traefik.io', version: 'v1alpha1', namespace: NAMESPACE, plural: 'middlewares', name: mw,
+  }).catch(ignoreNotFound);
+
+  // Wait for pod to actually be gone
+  for (let i = 0; i < 30; i++) {
+    try {
+      await coreApi.readNamespacedPod({ namespace: NAMESPACE, name: pod });
+      await new Promise(r => setTimeout(r, 1000));
+    } catch (err) {
+      if (err.statusCode === 404 || err.code === 404) break;
+      throw err;
+    }
+  }
+}
+
 async function startGameForUser(userId) {
   const existing = stmts.getRunningSession.get(userId);
   if (existing) {
-    return { url: `https://${GAME_DOMAIN}/play/${userId}/vnc.html`, sessionId: existing.id };
+    const vncParams = `autoconnect=true&scale=true&path=play/${userId}/websockify`;
+    return { url: `https://${GAME_DOMAIN}/play/${userId}/vnc_lite.html?${vncParams}`, sessionId: existing.id };
   }
+
+  // Clean up any leftover resources from a previous failed start
+  await cleanupGameResources(userId);
 
   const vncPassword = crypto.randomBytes(8).toString('hex');
   const pod = podName(userId);
@@ -64,14 +103,20 @@ async function startGameForUser(userId) {
       labels: { app: 'cm-game', user: userId.slice(0, 8) },
     },
     spec: {
+      tolerations: [{
+        key: 'node.kubernetes.io/disk-pressure',
+        operator: 'Exists',
+        effect: 'NoSchedule',
+      }],
       containers: [{
         name: 'game',
         image: GAME_IMAGE,
+        imagePullPolicy: 'Always',
         ports: [{ containerPort: 6080 }],
         env: [{ name: 'VNC_PASSWORD', value: vncPassword }],
         resources: {
-          requests: { memory: '256Mi', cpu: '250m' },
-          limits: { memory: '512Mi', cpu: '500m' },
+          requests: { memory: '512Mi', cpu: '500m' },
+          limits: { memory: '1Gi', cpu: '1000m' },
         },
         volumeMounts: [{ name: 'saves', mountPath: '/saves' }],
       }],
@@ -96,6 +141,23 @@ async function startGameForUser(userId) {
     },
   }});
 
+  // Create Traefik StripPrefix middleware
+  const mw = middlewareName(userId);
+  await customApi.createNamespacedCustomObject({
+    group: 'traefik.io',
+    version: 'v1alpha1',
+    namespace: NAMESPACE,
+    plural: 'middlewares',
+    body: {
+      apiVersion: 'traefik.io/v1alpha1',
+      kind: 'Middleware',
+      metadata: { name: mw, namespace: NAMESPACE },
+      spec: {
+        stripPrefix: { prefixes: [`/play/${userId}`] },
+      },
+    },
+  });
+
   // Create Ingress
   await networkingApi.createNamespacedIngress({ namespace: NAMESPACE, body: {
     apiVersion: 'networking.k8s.io/v1',
@@ -105,9 +167,11 @@ async function startGameForUser(userId) {
       namespace: NAMESPACE,
       annotations: {
         'traefik.ingress.kubernetes.io/router.entrypoints': 'websecure',
+        'traefik.ingress.kubernetes.io/router.middlewares': `${NAMESPACE}-${mw}@kubernetescrd`,
       },
     },
     spec: {
+      tls: [{ hosts: [GAME_DOMAIN], secretName: 'cm-game-tls' }],
       rules: [{
         host: GAME_DOMAIN,
         http: {
@@ -126,26 +190,15 @@ async function startGameForUser(userId) {
   const sessionId = uuidv4();
   stmts.insertSession.run(sessionId, userId, pod, vncPassword, 'running');
 
-  return { url: `https://${GAME_DOMAIN}/play/${userId}/vnc.html`, sessionId };
+  const vncParams = `autoconnect=true&scale=true&path=play/${userId}/websockify`;
+  return { url: `https://${GAME_DOMAIN}/play/${userId}/vnc_lite.html?${vncParams}`, sessionId };
 }
 
 async function stopGameForUser(userId) {
   const session = stmts.getRunningSession.get(userId);
   if (!session) return;
 
-  const pod = podName(userId);
-  const svc = serviceName(userId);
-  const ing = ingressName(userId);
-
-  const ignoreNotFound = (err) => {
-    if (err.statusCode === 404) return;
-    throw err;
-  };
-
-  await coreApi.deleteNamespacedPod({ namespace: NAMESPACE, name: pod }).catch(ignoreNotFound);
-  await coreApi.deleteNamespacedService({ namespace: NAMESPACE, name: svc }).catch(ignoreNotFound);
-  await networkingApi.deleteNamespacedIngress({ namespace: NAMESPACE, name: ing }).catch(ignoreNotFound);
-
+  await cleanupGameResources(userId);
   stmts.stopSession.run(userId);
 }
 
@@ -156,15 +209,23 @@ async function getGameStatus(userId) {
   try {
     const pod = await coreApi.readNamespacedPod({ namespace: NAMESPACE, name: session.pod_name });
     const phase = pod.status?.phase;
+
+    // If pod is in a terminal state (Failed, Evicted, Succeeded), clean up
+    if (phase !== 'Running' && phase !== 'Pending') {
+      await cleanupGameResources(userId);
+      stmts.stopSession.run(userId);
+      return { running: false };
+    }
+
     return {
       running: phase === 'Running',
       pending: phase === 'Pending',
-      url: `https://${GAME_DOMAIN}/play/${userId}/vnc.html`,
+      url: `https://${GAME_DOMAIN}/play/${userId}/vnc_lite.html?autoconnect=true&scale=true&path=play/${userId}/websockify`,
       startedAt: session.started_at,
       lastActivity: session.last_activity,
     };
   } catch (err) {
-    if (err.statusCode === 404) {
+    if (err.statusCode === 404 || err.code === 404) {
       stmts.stopSession.run(userId);
       return { running: false };
     }
